@@ -58,8 +58,18 @@ client = TestClient(app)
 def setup_db():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    from app.main import seed_initial_data
-    seed_initial_data(db)
+    # Ensure the CI administrator account exists or is synchronized with the generated credentials
+    admin_email = os.getenv("ADMIN_EMAIL", "skill.admin@nagriksetu.local")
+    admin_pass = os.getenv("ADMIN_PASSWORD", "SkillAdmin@2026!")
+    existing_admin = db.query(Account).filter(Account.citizen_ref == "ADM-SKILL-01").first()
+    if existing_admin:
+        existing_admin.email = admin_email
+        existing_admin.password_hash = hash_password(admin_pass)
+        existing_admin.active = True
+        db.commit()
+    else:
+        from app.main import seed_initial_data
+        seed_initial_data(db)
     db.close()
     yield
 
