@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+# Ensure backend directory is in PYTHONPATH for robust module resolution
+export PYTHONPATH=".:${PYTHONPATH}"
+
 # Run core functional & integration tests verified against MySQL
 python -m pytest \
   tests/test_skill_service.py::test_health_check_mysql \

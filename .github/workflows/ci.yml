@@ -63,6 +63,7 @@ jobs:
           JWT_SECRET: nagriksetu-skill-super-secret-key-2026-xyz-32char
           ADMIN_EMAIL: skill.admin@nagriksetu.local
           ADMIN_PASSWORD: SkillAdmin@2026!
+          PYTHONPATH: .
         run: |
           bash run_ci_tests.sh
 
