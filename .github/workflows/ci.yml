@@ -57,6 +57,11 @@ jobs:
           echo "ADMIN_EMAIL=ci-admin-${GITHUB_RUN_ID}@nagriksetu.ci" >> $GITHUB_ENV
           echo "ADMIN_PASSWORD=$GEN_ADMIN_PASS" >> $GITHUB_ENV
 
+          # 4. Writable Temporary Upload Directory for Runner
+          CI_UPLOAD_DIR="${{ runner.temp }}/nagriksetu-uploads"
+          mkdir -p "$CI_UPLOAD_DIR"
+          echo "UPLOAD_DIR=$CI_UPLOAD_DIR" >> $GITHUB_ENV
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:

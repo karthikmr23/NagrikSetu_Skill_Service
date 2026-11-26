@@ -10,6 +10,10 @@ from fastapi.testclient import TestClient
 if "DATABASE_URL" not in os.environ:
     os.environ["DATABASE_URL"] = "mysql+pymysql://nagriksetu_skill:skill-app-pass-2026@127.0.0.1:3308/skill_db"
 
+if "UPLOAD_DIR" not in os.environ:
+    import tempfile
+    os.environ["UPLOAD_DIR"] = os.path.join(tempfile.gettempdir(), "nagriksetu_test_uploads")
+
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "skill.admin@nagriksetu.local")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "SkillAdmin@2026!")
 
