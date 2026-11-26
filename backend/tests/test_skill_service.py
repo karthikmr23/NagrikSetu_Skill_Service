@@ -374,6 +374,7 @@ def test_citizen_skill_profile_and_proficiency_validation():
     prof_otp = create_verified_otp(prof_email, "REGISTRATION")
     user_res = client.post("/api/auth/register", json={
         "email": prof_email,
+        "password": "Password@123",
         "full_name": "Skill Profile Citizen",
         "phone": "+91 9123456788",
         "otp_reference": prof_otp

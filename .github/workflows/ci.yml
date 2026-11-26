@@ -1,0 +1,141 @@
+name: NagrikSetu Skill Development CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =========================================================================
+  # 1. Backend CI Job (Python 3.11, Dependencies, Lint/Syntax & Test Suite)
+  # =========================================================================
+  backend-ci:
+    name: Backend CI (Python & FastAPIs)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: skill-root-secure-pass
+          MYSQL_DATABASE: skill_db
+          MYSQL_USER: nagriksetu_skill
+          MYSQL_PASSWORD: skill-app-pass-2026
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping -u root -pskill-root-secure-pass" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pytest httpx flake8
+
+      - name: Python Syntax and Code Quality Check
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 backend/app --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Initialize Database Schema from SQL Backup
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -u nagriksetu_skill -pskill-app-pass-2026 skill_db < database/skill_db_backup.sql
+
+      - name: Run Backend Integration & Functional Tests
+        env:
+          DATABASE_URL: mysql+pymysql://nagriksetu_skill:skill-app-pass-2026@127.0.0.1:3306/skill_db
+          JWT_SECRET: nagriksetu-skill-super-secret-key-2026-xyz-32char
+          ADMIN_EMAIL: skill.admin@nagriksetu.local
+          ADMIN_PASSWORD: SkillAdmin@2026!
+          PYTHONPATH: backend
+        run: |
+          pytest backend/tests/test_skill_service.py -v -k "test_health_check_mysql or test_auth_and_citizen_isolation or test_duplicate_enrolment_and_batch_capacity or test_citizen_skill_profile or test_skill_gap_analysis"
+
+  # =========================================================================
+  # 2. Frontend CI Job (Node.js 20, Typescript Verification & Production Build)
+  # =========================================================================
+  frontend-ci:
+    name: Frontend CI (React 18 & Vite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: TypeScript Type Check and Production Build
+        working-directory: frontend
+        run: npm run build
+
+  # =========================================================================
+  # 3. Docker CI Job (Docker Compose Validation & Image Builds)
+  # =========================================================================
+  docker-ci:
+    name: Docker CI (Compose Validation & Container Builds)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Docker Compose Configuration
+        env:
+          MYSQL_ROOT_PASSWORD: safe-ci-root-pass
+          MYSQL_DATABASE: skill_db
+          MYSQL_USER: nagriksetu_skill
+          MYSQL_PASSWORD: safe-ci-app-pass
+          SKILL_DB_PORT: 3308
+          JWT_SECRET: safe-ci-jwt-secret-32-chars-long
+          ADMIN_EMAIL: skill.admin@nagriksetu.local
+          ADMIN_PASSWORD: SafeAdminPassword2026!
+          SKILL_BACKEND_PORT: 8003
+          SKILL_FRONTEND_PORT: 5173
+        run: |
+          docker compose -f docker-compose.yml config
+
+      - name: Build Backend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: nagriksetu-skill-backend:ci-check
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Frontend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: nagriksetu-skill-frontend:ci-check
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
