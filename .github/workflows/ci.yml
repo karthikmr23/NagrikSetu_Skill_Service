@@ -64,7 +64,8 @@ jobs:
           ADMIN_EMAIL: skill.admin@nagriksetu.local
           ADMIN_PASSWORD: SkillAdmin@2026!
         run: |
-          python -m pytest tests/test_skill_service.py -v -k "test_health_check_mysql or test_auth_and_citizen_isolation or test_duplicate_enrolment_and_batch_capacity or test_citizen_skill_profile or test_skill_gap_analysis" --tb=short -rA
+          python -m pytest tests/test_skill_service.py -v -k "test_health_check_mysql or test_auth_and_citizen_isolation or test_duplicate_enrolment_and_batch_capacity or test_citizen_skill_profile or test_skill_gap_analysis" --tb=short > pytest_output.log 2>&1 || (cat pytest_output.log && exit 1)
+          cat pytest_output.log
 
   # =========================================================================
   # 2. Frontend CI Job (Node.js 20, Typescript Verification & Production Build)
