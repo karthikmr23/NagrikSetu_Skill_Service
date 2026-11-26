@@ -23,9 +23,9 @@ def create_verified_otp(identifier: str, purpose: str, citizen_ref: str = None) 
     db = SessionLocal()
     ref = f"test_otp_ref_{int(time.time() * 1000)}_{secrets.token_hex(4)}_{purpose}"
     if "@" in identifier:
-        target = identifier.strip().lower()
+        target = identifier.strip().lower()[:40]
     else:
-        target = normalize_phone(identifier)
+        target = normalize_phone(identifier)[:40]
     sess = OTPVerificationSession(
         reference=ref,
         phone=target,
