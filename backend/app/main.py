@@ -9,7 +9,7 @@ from datetime import datetime, timezone, date, timedelta
 from typing import Optional, List, Dict
 from fastapi import FastAPI, Depends, HTTPException, Header, Query, status, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, select, func, and_, or_, desc, text
+from sqlalchemy import create_engine, select, func, distinct, and_, or_, desc, text
 from sqlalchemy.orm import sessionmaker, Session, joinedload
 
 from app.models import (
