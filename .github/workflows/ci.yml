@@ -55,8 +55,8 @@ jobs:
         run: |
           mysql -h 127.0.0.1 -P 3306 -u nagriksetu_skill -pskill-app-pass-2026 skill_db < database/skill_db_backup.sql
           mysql -h 127.0.0.1 -P 3306 -u nagriksetu_skill -pskill-app-pass-2026 skill_db -e "
-            ALTER TABLE accounts ADD COLUMN IF NOT EXISTS student_id VARCHAR(36) UNIQUE NULL AFTER citizen_ref;
-            ALTER TABLE accounts ADD COLUMN IF NOT EXISTS centre_id INT NULL AFTER created_at;
+            ALTER TABLE accounts ADD COLUMN student_id VARCHAR(36) UNIQUE NULL AFTER citizen_ref;
+            ALTER TABLE accounts ADD COLUMN centre_id INT NULL AFTER created_at;
 
             CREATE TABLE IF NOT EXISTS subcategories (
               id int NOT NULL AUTO_INCREMENT,
@@ -71,30 +71,30 @@ jobs:
               CONSTRAINT subcategories_ibfk_1 FOREIGN KEY (category_id) REFERENCES categories (id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-            ALTER TABLE skills ADD COLUMN IF NOT EXISTS subcategory_id INT NULL AFTER category_name;
-            ALTER TABLE skills ADD COLUMN IF NOT EXISTS subcategory_name VARCHAR(100) NULL AFTER subcategory_id;
+            ALTER TABLE skills ADD COLUMN subcategory_id INT NULL AFTER category_name;
+            ALTER TABLE skills ADD COLUMN subcategory_name VARCHAR(100) NULL AFTER subcategory_id;
 
-            ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS student_id VARCHAR(36) NULL AFTER code;
-            ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS centre_id INT NULL AFTER updated_at;
-            ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS rejection_reason TEXT NULL AFTER centre_id;
-            ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS decision_by_admin_id INT NULL AFTER rejection_reason;
-            ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS decision_timestamp DATETIME NULL AFTER decision_by_admin_id;
-            ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS internal_notes TEXT NULL AFTER decision_timestamp;
+            ALTER TABLE enrollments ADD COLUMN student_id VARCHAR(36) NULL AFTER code;
+            ALTER TABLE enrollments ADD COLUMN centre_id INT NULL AFTER updated_at;
+            ALTER TABLE enrollments ADD COLUMN rejection_reason TEXT NULL AFTER centre_id;
+            ALTER TABLE enrollments ADD COLUMN decision_by_admin_id INT NULL AFTER rejection_reason;
+            ALTER TABLE enrollments ADD COLUMN decision_timestamp DATETIME NULL AFTER decision_by_admin_id;
+            ALTER TABLE enrollments ADD COLUMN internal_notes TEXT NULL AFTER decision_timestamp;
 
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS latitude DOUBLE NULL AFTER active;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS longitude DOUBLE NULL AFTER latitude;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS approval_status VARCHAR(40) NOT NULL DEFAULT 'APPROVED' AFTER longitude;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS rejection_reason TEXT NULL AFTER approval_status;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS establishment_year INT NULL AFTER rejection_reason;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS website VARCHAR(255) NULL AFTER establishment_year;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS description TEXT NULL AFTER website;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS history TEXT NULL AFTER description;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS mission_objectives TEXT NULL AFTER history;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS achievements TEXT NULL AFTER mission_objectives;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS certifications TEXT NULL AFTER achievements;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS classroom_count INT DEFAULT 5 AFTER certifications;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS lab_details TEXT NULL AFTER classroom_count;
-            ALTER TABLE training_centres ADD COLUMN IF NOT EXISTS equipment_details TEXT NULL AFTER lab_details;
+            ALTER TABLE training_centres ADD COLUMN latitude DOUBLE NULL AFTER active;
+            ALTER TABLE training_centres ADD COLUMN longitude DOUBLE NULL AFTER latitude;
+            ALTER TABLE training_centres ADD COLUMN approval_status VARCHAR(40) NOT NULL DEFAULT 'APPROVED' AFTER longitude;
+            ALTER TABLE training_centres ADD COLUMN rejection_reason TEXT NULL AFTER approval_status;
+            ALTER TABLE training_centres ADD COLUMN establishment_year INT NULL AFTER rejection_reason;
+            ALTER TABLE training_centres ADD COLUMN website VARCHAR(255) NULL AFTER establishment_year;
+            ALTER TABLE training_centres ADD COLUMN description TEXT NULL AFTER website;
+            ALTER TABLE training_centres ADD COLUMN history TEXT NULL AFTER description;
+            ALTER TABLE training_centres ADD COLUMN mission_objectives TEXT NULL AFTER history;
+            ALTER TABLE training_centres ADD COLUMN achievements TEXT NULL AFTER mission_objectives;
+            ALTER TABLE training_centres ADD COLUMN certifications TEXT NULL AFTER achievements;
+            ALTER TABLE training_centres ADD COLUMN classroom_count INT DEFAULT 5 AFTER certifications;
+            ALTER TABLE training_centres ADD COLUMN lab_details TEXT NULL AFTER classroom_count;
+            ALTER TABLE training_centres ADD COLUMN equipment_details TEXT NULL AFTER lab_details;
 
             CREATE TABLE IF NOT EXISTS admin_centre_assignments (
               id int NOT NULL AUTO_INCREMENT,
