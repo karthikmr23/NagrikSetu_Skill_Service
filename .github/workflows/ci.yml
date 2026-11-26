@@ -54,6 +54,29 @@ jobs:
       - name: Initialize Database Schema from SQL Backup
         run: |
           mysql -h 127.0.0.1 -P 3306 -u nagriksetu_skill -pskill-app-pass-2026 skill_db < database/skill_db_backup.sql
+          mysql -h 127.0.0.1 -P 3306 -u nagriksetu_skill -pskill-app-pass-2026 skill_db -e "
+            CREATE TABLE IF NOT EXISTS otp_verification_sessions (
+              id int NOT NULL AUTO_INCREMENT,
+              reference varchar(80) NOT NULL,
+              phone varchar(180) NOT NULL,
+              citizen_ref varchar(80) DEFAULT NULL,
+              purpose varchar(60) NOT NULL,
+              provider varchar(40) DEFAULT NULL,
+              provider_message_id varchar(120) DEFAULT NULL,
+              hashed_code varchar(128) NOT NULL,
+              attempts int DEFAULT NULL,
+              max_attempts int DEFAULT NULL,
+              is_verified tinyint(1) DEFAULT NULL,
+              is_consumed tinyint(1) DEFAULT NULL,
+              expires_at datetime NOT NULL,
+              verified_at datetime DEFAULT NULL,
+              created_at datetime DEFAULT NULL,
+              PRIMARY KEY (id),
+              UNIQUE KEY ix_otp_verification_sessions_reference (reference),
+              KEY ix_otp_verification_sessions_phone (phone),
+              KEY ix_otp_verification_sessions_citizen_ref (citizen_ref)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+          "
 
       - name: Run Backend Integration & Functional Tests
         env:
