@@ -64,13 +64,7 @@ jobs:
           ADMIN_EMAIL: skill.admin@nagriksetu.local
           ADMIN_PASSWORD: SkillAdmin@2026!
         run: |
-          python -m pytest \
-            tests/test_skill_service.py::test_health_check_mysql \
-            tests/test_skill_service.py::test_auth_and_citizen_isolation \
-            tests/test_skill_service.py::test_duplicate_enrolment_and_batch_capacity \
-            tests/test_skill_service.py::test_citizen_skill_profile_and_proficiency_validation \
-            tests/test_skill_service.py::test_skill_gap_analysis_and_training_mapping \
-            -v --tb=short
+          bash run_ci_tests.sh
 
   # =========================================================================
   # 2. Frontend CI Job (Node.js 20, Typescript Verification & Production Build)
