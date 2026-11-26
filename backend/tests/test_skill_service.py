@@ -66,8 +66,8 @@ def test_auth_and_citizen_isolation():
     t_stamp = int(time.time() * 1000)
     
     # Register Citizen A with verified OTP reference
-    phone_a = "+91 9123456789"
-    email_a = f"citizen.a.{t_stamp}@nagriksetu.local"
+    phone_a = f"+91 91{t_stamp % 100000000:08d}"
+    email_a = f"ca{t_stamp}@nagriksetu.in"
     otp_ref_a = create_verified_otp(email_a, "REGISTRATION")
     res_a = client.post("/api/auth/register", json={
         "email": email_a,
@@ -81,8 +81,8 @@ def test_auth_and_citizen_isolation():
     citizen_ref_a = res_a.json()["citizen_ref"]
 
     # Register Citizen B with verified OTP reference
-    phone_b = "+91 9123456780"
-    email_b = f"citizen.b.{t_stamp}@nagriksetu.local"
+    phone_b = f"+91 92{t_stamp % 100000000:08d}"
+    email_b = f"cb{t_stamp}@nagriksetu.in"
     otp_ref_b = create_verified_otp(email_b, "REGISTRATION")
     res_b = client.post("/api/auth/register", json={
         "email": email_b,
