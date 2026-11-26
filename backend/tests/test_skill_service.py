@@ -127,7 +127,7 @@ def test_auth_and_citizen_isolation():
 def test_duplicate_enrolment_and_batch_capacity():
     t_stamp = int(time.time() * 1000)
     phone = f"+91 999{t_stamp % 10000000:07d}"
-    email_cap = f"capacity.test.{t_stamp}@nagriksetu.local"
+    email_cap = f"c{t_stamp}@nagriksetu.in"
     reg_otp = create_verified_otp(email_cap, "REGISTRATION")
     res_user = client.post("/api/auth/register", json={
         "email": email_cap,
@@ -370,7 +370,7 @@ def test_skill_catalogue_crud_and_deactivation():
 def test_citizen_skill_profile_and_proficiency_validation():
     """FR-SKL-002, FR-SKL-004: Citizen skill profile management and validation."""
     t_stamp = int(time.time() * 1000)
-    prof_email = f"citizen.profile.{t_stamp}@nagriksetu.local"
+    prof_email = f"p{t_stamp}@nagriksetu.in"
     prof_otp = create_verified_otp(prof_email, "REGISTRATION")
     user_res = client.post("/api/auth/register", json={
         "email": prof_email,
