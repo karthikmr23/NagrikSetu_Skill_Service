@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS subcategories (
   category_id int NOT NULL,
   name varchar(100) NOT NULL,
   description text,
+  icon_name varchar(50) DEFAULT 'Folder',
+  created_at datetime DEFAULT CURRENT_TIMESTAMP,
   active tinyint(1) DEFAULT '1',
   PRIMARY KEY (id),
   UNIQUE KEY ix_subcategories_code (code),

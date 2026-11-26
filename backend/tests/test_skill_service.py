@@ -10,6 +10,13 @@ from fastapi.testclient import TestClient
 if "DATABASE_URL" not in os.environ:
     os.environ["DATABASE_URL"] = "mysql+pymysql://nagriksetu_skill:skill-app-pass-2026@127.0.0.1:3308/skill_db"
 
+if "UPLOAD_DIR" not in os.environ:
+    import tempfile
+    os.environ["UPLOAD_DIR"] = os.path.join(tempfile.gettempdir(), "nagriksetu_test_uploads")
+
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "skill.admin@nagriksetu.local")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "SkillAdmin@2026!")
+
 from app.main import app, SessionLocal, Base, engine, hash_password
 from app.models import (
     Account, Skill, TrainingProgram, Batch, Enrollment, AttendanceRecord,
@@ -51,8 +58,18 @@ client = TestClient(app)
 def setup_db():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    from app.main import seed_initial_data
-    seed_initial_data(db)
+    # Ensure the CI administrator account exists or is synchronized with the generated credentials
+    admin_email = os.getenv("ADMIN_EMAIL", "skill.admin@nagriksetu.local")
+    admin_pass = os.getenv("ADMIN_PASSWORD", "SkillAdmin@2026!")
+    existing_admin = db.query(Account).filter(Account.citizen_ref == "ADM-SKILL-01").first()
+    if existing_admin:
+        existing_admin.email = admin_email
+        existing_admin.password_hash = hash_password(admin_pass)
+        existing_admin.active = True
+        db.commit()
+    else:
+        from app.main import seed_initial_data
+        seed_initial_data(db)
     db.close()
     yield
 
@@ -175,8 +192,8 @@ def test_full_training_lifecycle_attendance_modules_assessments_certificate():
 
     # 1. Platform Admin login (Strict view-only oversight)
     admin_login = client.post("/api/auth/login", json={
-        "email": "skill.admin@nagriksetu.local",
-        "password": "SkillAdmin@2026!"
+        "email": ADMIN_EMAIL,
+        "password": ADMIN_PASSWORD
     })
     assert admin_login.status_code == 200
     admin_token = admin_login.json()["access_token"]
@@ -265,8 +282,8 @@ def test_full_training_lifecycle_attendance_modules_assessments_certificate():
 def test_skill_catalogue_crud_and_deactivation():
     """FR-SKL-001, FR-SKL-003, FR-SKL-006: Skill Catalogue admin operations and strict view-only RBAC protection."""
     admin_login = client.post("/api/auth/login", json={
-        "email": "skill.admin@nagriksetu.local",
-        "password": "SkillAdmin@2026!"
+        "email": ADMIN_EMAIL,
+        "password": ADMIN_PASSWORD
     })
     assert admin_login.status_code == 200
     admin_token = admin_login.json()["access_token"]
@@ -381,8 +398,8 @@ def test_citizen_skill_profile_and_proficiency_validation():
 def test_training_centre_crud():
     """FR-SKL-007: Training centre management and view-only RBAC protection."""
     admin_login = client.post("/api/auth/login", json={
-        "email": "skill.admin@nagriksetu.local",
-        "password": "SkillAdmin@2026!"
+        "email": ADMIN_EMAIL,
+        "password": ADMIN_PASSWORD
     })
     admin_token = admin_login.json()["access_token"]
     t_stamp = int(time.time() * 1000)
@@ -422,8 +439,8 @@ def test_training_centre_crud():
 def test_training_programme_creation_and_discovery():
     """FR-SKL-008, FR-SKL-010, FR-SKL-011, FR-SKL-012, FR-SKL-013: Programme management, discovery & RBAC enforcement."""
     admin_login = client.post("/api/auth/login", json={
-        "email": "skill.admin@nagriksetu.local",
-        "password": "SkillAdmin@2026!"
+        "email": ADMIN_EMAIL,
+        "password": ADMIN_PASSWORD
     })
     admin_token = admin_login.json()["access_token"]
 

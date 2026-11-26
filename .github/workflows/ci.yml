@@ -22,17 +22,45 @@ jobs:
       mysql:
         image: mysql:8.4
         env:
-          MYSQL_ROOT_PASSWORD: skill-root-secure-pass
+          MYSQL_ROOT_PASSWORD: ${{ secrets.CI_MYSQL_ROOT_PASSWORD }}
           MYSQL_DATABASE: skill_db
-          MYSQL_USER: nagriksetu_skill
-          MYSQL_PASSWORD: skill-app-pass-2026
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping -u root -pskill-root-secure-pass" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: >-
+          --health-cmd="mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Generate Disposable Ephemeral CI Credentials
+        run: |
+          # 1. Ephemeral database user & password for disposable runner container
+          DB_USER="ci_user_$(openssl rand -hex 4)"
+          DB_PASS="$(openssl rand -hex 16)"
+          echo "::add-mask::$DB_PASS"
+          echo "CI_DB_USER=$DB_USER" >> $GITHUB_ENV
+          echo "CI_DB_PASS=$DB_PASS" >> $GITHUB_ENV
+          echo "DATABASE_URL=mysql+pymysql://${DB_USER}:${DB_PASS}@127.0.0.1:3306/skill_db" >> $GITHUB_ENV
+
+          # 2. Ephemeral JWT Secret (strictly generated fresh per run)
+          GEN_JWT="$(openssl rand -hex 32)"
+          echo "::add-mask::$GEN_JWT"
+          echo "JWT_SECRET=$GEN_JWT" >> $GITHUB_ENV
+
+          # 3. Ephemeral Admin Credentials (strictly generated fresh per run)
+          GEN_ADMIN_PASS="$(openssl rand -hex 16)!"
+          echo "::add-mask::$GEN_ADMIN_PASS"
+          echo "ADMIN_EMAIL=ci-admin-${GITHUB_RUN_ID}@nagriksetu.ci" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=$GEN_ADMIN_PASS" >> $GITHUB_ENV
+
+          # 4. Writable Temporary Upload Directory for Runner
+          CI_UPLOAD_DIR="${{ runner.temp }}/nagriksetu-uploads"
+          mkdir -p "$CI_UPLOAD_DIR"
+          echo "UPLOAD_DIR=$CI_UPLOAD_DIR" >> $GITHUB_ENV
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -51,19 +79,25 @@ jobs:
           # Stop the build if there are Python syntax errors or undefined names
           flake8 backend/app --count --select=E9,F63,F7,F82 --show-source --statistics
 
-      - name: Initialize Database Schema from SQL Backup
+      - name: Configure Disposable Database & Initialize Schema
+        env:
+          MYSQL_ROOT_PWD: ${{ secrets.CI_MYSQL_ROOT_PASSWORD }}
         run: |
-          mysql -h 127.0.0.1 -P 3306 -u nagriksetu_skill -pskill-app-pass-2026 skill_db < database/skill_db_backup.sql
-          mysql -h 127.0.0.1 -P 3306 -u nagriksetu_skill -pskill-app-pass-2026 skill_db < database/ci_schema_migrations.sql
+          # Provision disposable test user using root credentials via environment variable
+          MYSQL_PWD="$MYSQL_ROOT_PWD" mysql -h 127.0.0.1 -P 3306 -u root -e "
+            CREATE DATABASE IF NOT EXISTS skill_db;
+            CREATE USER IF NOT EXISTS '${CI_DB_USER}'@'%' IDENTIFIED BY '${CI_DB_PASS}';
+            GRANT ALL PRIVILEGES ON skill_db.* TO '${CI_DB_USER}'@'%';
+            FLUSH PRIVILEGES;
+          "
+          # Restore schema and migrations using the newly provisioned disposable user
+          MYSQL_PWD="$CI_DB_PASS" mysql -h 127.0.0.1 -P 3306 -u "$CI_DB_USER" skill_db < database/skill_db_backup.sql
+          MYSQL_PWD="$CI_DB_PASS" mysql -h 127.0.0.1 -P 3306 -u "$CI_DB_USER" skill_db < database/ci_schema_migrations.sql
 
       - name: Run Backend Integration & Functional Tests
         working-directory: backend
-        env:
-          DATABASE_URL: mysql+pymysql://nagriksetu_skill:skill-app-pass-2026@127.0.0.1:3306/skill_db
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'nagriksetu-skill-super-secret-key-2026-xyz-32char' }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL || 'skill.admin@nagriksetu.local' }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'SkillAdmin@2026!' }}
         run: |
+          set -o pipefail
           python -m pytest tests/test_skill_service.py -v --tb=short 2>&1 | tee pytest_output.log
 
       - name: Upload Test Results
